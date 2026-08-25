@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#242d3d"/>
+      <stop offset="1" stop-color="#141924"/>
+    </linearGradient>
+    <linearGradient id="clay" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#eec079"/>
+      <stop offset="1" stop-color="#c08436"/>
+    </linearGradient>
+    <linearGradient id="clayDim" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a8823f"/>
+      <stop offset="1" stop-color="#7c5c26"/>
+    </linearGradient>
+  </defs>
+
+  <!-- tablet tile -->
+  <rect x="2" y="2" width="60" height="60" rx="14"
+        fill="url(#bg)" stroke="#3a4356" stroke-width="1.5"/>
+
+  <!-- faint ten-sign chevron (texture, upper right) -->
+  <path d="M40 11 l9 -4.5 -2.2 10 z" fill="url(#clayDim)" opacity="0.45"/>
+
+  <!-- main wedge: the Babylonian sign that means both 1 and 60 -->
+  <path d="M32 8
+           C 27.5 16 23.5 23.5 22.5 31.5
+           C 21.5 41 26.5 49.5 31 54.5
+           L 33 54.5
+           C 37.5 49.5 42.5 41 41.5 31.5
+           C 40.5 23.5 36.5 16 32 8 Z"
+        fill="url(#clay)"/>
+
+  <!-- ten-sign accents (lower right) -->
+  <path d="M44 37 l9.5 4 -7.5 7 z"   fill="url(#clay)" opacity="0.9"/>
+  <path d="M47.5 49 l8.5 2.5 -4.5 8" fill="none" stroke="url(#clay)" stroke-width="2.6" stroke-linecap="round" opacity="0.65"/>
+</svg>

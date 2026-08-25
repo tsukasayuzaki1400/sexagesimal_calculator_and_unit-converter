@@ -1,0 +1,372 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Babylonian Calculator — Sexagesimal</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2314171c'/%3E%3Cpath d='M30 10v18h4V10zM22 28h20l-10 22z' fill='%23d9a441'/%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#101318; --bg-glow:#1a2130; --panel:#191f29; --panel2:#141923;
+  --key:#222a37; --key2:#1e2531; --key-hi:#2b3546;
+  --line:#2c3646; --ink:#e9e4d8; --mut:#8b93a5; --clay:#d8b878; --accent:#e0a83f;
+  --err:#ff7070; --neg:#ff9d9d; --opglyph:#9aa5b8; --accent-ink:#171207;
+  --overlay:rgba(5,8,12,.66); --shadow-lg:rgba(0,0,0,.35); --shadow-xl:rgba(0,0,0,.5);
+  --glow:var(--glow); --on-accent-border:#5a4a26; --hist-hover:#182032;
+  --hist-hover-line:#43506a; --legend-h:#c8cfdd; --zero-dash:#3a4658;
+}
+body.light{
+  --bg:#eef1f6; --bg-glow:#f7f9fc; --panel:#ffffff; --panel2:#f2f4f8;
+  --key:#e7ebf2; --key2:#dde3ec; --key-hi:#d9e0eb;
+  --line:#cfd6e1; --ink:#22293a; --mut:#5c6679; --clay:#a5731f; --accent:#b07a17;
+  --err:#c22f2f; --neg:#bb4444; --opglyph:#4a5568; --accent-ink:#fffaf0;
+  --overlay:rgba(30,41,59,.38); --shadow-lg:rgba(31,41,55,.12); --shadow-xl:rgba(31,41,55,.18);
+  --glow:rgba(176,122,23,.20); --on-accent-border:#8a5f10; --hist-hover:#f6f8fb;
+  --hist-hover-line:#b8c2d2; --legend-h:#3d4658; --zero-dash:#aab4c4;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  background:radial-gradient(1200px 800px at 70% -10%, var(--bg-glow) 0%, var(--bg) 55%);
+  color:var(--ink);
+  font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  min-height:100vh;
+}
+button{font:inherit;color:inherit;background:none;border:none;padding:0;cursor:pointer}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.app{max-width:1340px;margin:0 auto;padding:20px;display:grid;grid-template-columns:minmax(0,1fr) 290px;gap:18px}
+
+/* calculator column */
+.calc{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:16px;box-shadow:0 18px 50px var(--shadow-lg)}
+.brand{display:flex;align-items:center;gap:10px;font-weight:650;letter-spacing:.3px;margin-bottom:12px;font-size:17px}
+.brand .tabs{margin-left:auto;display:flex;gap:4px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:3px}
+.viewtab{border:0;background:transparent;color:var(--mut);font-family:inherit;font-size:13px;padding:5px 12px;border-radius:7px;cursor:pointer}
+.viewtab.on{background:var(--key-hi);color:var(--ink)}
+[hidden]{display:none!important}
+.conv-cats{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.pill{border:1px solid var(--line);background:var(--key);color:var(--mut);border-radius:999px;padding:6px 14px;font-size:13px;font-family:inherit;cursor:pointer;transition:.12s}
+.pill:hover{background:var(--key-hi)}
+.pill.on{background:var(--accent);color:var(--accent-ink);border-color:transparent;font-weight:600}
+.conv-grid{display:grid;grid-template-columns:1fr 44px 1fr;gap:8px;align-items:center;margin-bottom:14px}
+.conv-amt-disp{grid-column:1/-1}
+.conv-amt-disp{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:8px 12px;display:flex;align-items:center;gap:10px;min-height:42px}
+#convAmtDisp{font-size:22px;font-weight:600;color:var(--ink);font-family:ui-monospace,Menlo,Consolas,monospace;word-break:break-all}
+#convAmtDec{color:var(--mut);font-size:13px;font-family:system-ui}
+.conv-entry-keys{display:flex;gap:4px}
+.ghost-key{border:1px solid var(--line);background:var(--key);color:var(--mut);border-radius:7px;font-family:inherit;font-size:14px;padding:6px 9px;cursor:pointer}
+.ghost-key:hover{background:var(--key-hi);color:var(--ink)}
+#padZone.conv .rail{display:none}
+.conv-sel{background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:var(--ink);font-family:inherit;font-size:16px;padding:11px 12px;width:100%;box-sizing:border-box}
+.conv-sel:focus{outline:none;border-color:var(--accent)}
+.conv-swap{height:42px;border-radius:10px;border:1px solid var(--line);background:var(--key);color:var(--clay);font-size:18px;cursor:pointer}
+.conv-swap:hover{background:var(--key-hi)}
+.conv-result{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:16px 18px;min-height:110px;display:flex;flex-direction:column;justify-content:center;gap:8px}
+.conv-out{text-align:right;font-size:clamp(24px,4vw,34px);font-weight:600;color:var(--accent);font-family:ui-monospace,Menlo,Consolas,monospace;word-break:break-all;min-height:40px}
+.conv-out .unit{font-size:.55em;font-weight:400;color:var(--mut);font-family:system-ui}
+.conv-out .cerr{font-size:16px;font-weight:400;color:var(--err);font-family:system-ui}
+.conv-out .cwait{font-size:16px;font-weight:400;color:var(--mut);font-style:italic;font-family:system-ui}
+.conv-cunei{justify-content:flex-end;min-height:46px}
+.conv-note{align-self:flex-end;background:transparent;border:0;border-bottom:1px dashed var(--line);color:var(--mut);font-family:system-ui;font-size:12px;padding:1px 2px;cursor:pointer}
+.conv-note:hover{color:var(--accent)}
+.brand-mark svg{height:26px;width:auto;color:var(--clay);display:block}
+.ghost{margin-left:auto;background:none;border:1px solid var(--line);color:var(--mut);border-radius:8px;padding:4px 11px;cursor:pointer;font-size:13px}
+.ghost:hover{color:var(--ink);border-color:var(--key-hi)}
+
+.display{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:14px 18px;min-height:180px;display:flex;flex-direction:column;justify-content:flex-end;gap:8px}
+.cunei{display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:flex-end;gap:7px;min-height:52px;color:var(--clay);max-height:300px;overflow-y:auto}
+.cunei.compact .gbox svg{height:34px}
+.cunei.compact .gtext{font-size:26px}
+.cunei.compact .opglyph{font-size:19px;line-height:36px}
+.cunei.tiny .gbox svg{height:26px}
+.cunei.tiny .gtext{font-size:20px}
+.cunei.tiny .opglyph{font-size:15px;line-height:28px}
+.numgrp{display:inline-flex;gap:6px;align-items:flex-end;margin-right:6px}
+.opglyph{color:var(--opglyph);font-family:ui-monospace,Menlo,Consolas,monospace;font-size:24px;line-height:46px;padding:0 1px}
+.gbox{display:inline-flex}
+.gbox svg{height:44px;width:auto;display:block}
+.gtext{
+  font-family:"Segoe UI Historic","Noto Sans Cuneiform","Akkadian","FreeSerif","Noto Sans Cuneiform Regular",serif;
+  line-height:1;letter-spacing:1px;color:var(--clay);
+}
+.cunei .gtext{font-size:34px}
+.dkey .gtext{font-size:25px}
+.brand-mark .gtext{font-size:22px}
+.negsign{color:var(--neg);font-size:34px;line-height:46px;margin-right:2px}
+.expr{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:clamp(22px,3.4vw,32px);text-align:right;word-break:break-all;min-height:42px;color:var(--ink)}
+.expr.empty:before{content:'type or tap cuneiform digits';color:var(--mut);font-size:15px;font-family:system-ui}
+.result{text-align:right;font-size:clamp(22px,3.2vw,30px);min-height:38px;font-weight:600;color:var(--accent);font-family:ui-monospace,Menlo,Consolas,monospace;word-break:break-all}
+.result-row{display:flex;align-items:flex-end;justify-content:flex-end;gap:7px}
+.copy-btn{flex:none;background:transparent;border:1px solid var(--line);border-radius:8px;color:var(--mut);width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;padding:0;margin-bottom:3px;transition:.12s}
+.copy-btn:hover{color:var(--accent);border-color:var(--accent)}
+.copy-btn.ok{color:#2e9e57;border-color:#2e9e57}
+body.light .copy-btn.ok{color:#1d7c42;border-color:#1d7c42}
+.copy-btn svg{width:15px;height:15px;display:block}
+.result.err span{color:var(--err);font-size:16px;font-weight:500;font-family:system-ui}
+
+.controls{display:flex;gap:12px;margin-top:14px}
+.digits{flex:1;display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:6px}
+.dkey{background:linear-gradient(180deg,var(--key) 0%,var(--key2) 100%);border:1px solid var(--line);border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:5px 1px 4px;transition:.12s;min-height:58px;min-width:0;overflow:hidden}
+.dkey:hover{background:var(--key-hi);transform:translateY(-1px)}
+.dkey:active{transform:translateY(1px)}
+.dkey svg{height:32px;width:auto;color:var(--clay)}
+.dkey .gtext{color:var(--clay);letter-spacing:0;white-space:nowrap;font-size:24px}
+.dkey.wide4 .gtext{font-size:19px}
+.dkey.wide5 .gtext{font-size:15px}
+.klabel{font-size:10px;color:var(--mut);margin-top:3px;font-variant-numeric:tabular-nums;line-height:1}
+.dkey.zero{outline:1px dashed var(--zero-dash);outline-offset:-3px}
+
+.rail{width:216px;flex-shrink:0;display:flex;flex-direction:column;gap:10px}
+.toggles{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.tgl{background:var(--key);border:1px solid var(--line);border-radius:9px;padding:8px 4px;font-size:13px;font-weight:600;color:var(--mut);letter-spacing:.5px}
+.tgl:hover{color:var(--ink)}
+.tgl.on{color:var(--accent);border-color:var(--on-accent-border)}
+.sci{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.ops{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.sci button,.ops button{background:var(--key);border:1px solid var(--line);border-radius:9px;padding:9px 2px;font-size:13.5px;color:var(--ink);transition:.12s}
+.sci button:hover,.ops button:hover{background:var(--key-hi)}
+.sci button:active,.ops button:active{transform:translateY(1px)}
+.ops button{font-size:17px;font-weight:600;padding:11px 2px}
+.ops .danger{color:var(--neg)}
+.eq{background:linear-gradient(180deg,var(--clay),var(--accent));color:var(--accent-ink);font-weight:750;font-size:21px;border-radius:12px;padding:15px;box-shadow:0 6px 18px var(--glow);transition:.12s}
+.eq:hover{filter:brightness(1.06)}
+.eq:active{transform:translateY(1px)}
+
+/* side column */
+.side{display:flex;flex-direction:column;gap:14px;min-width:0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px}
+.card h2{margin:0 0 10px;font-size:13px;letter-spacing:.7px;text-transform:uppercase;color:var(--mut);display:flex;align-items:center}
+#history{list-style:none;margin:0;padding:0;max-height:420px;overflow:auto;display:flex;flex-direction:column;gap:6px}
+#history li{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:8px 10px;cursor:pointer;transition:.12s}
+#history li:hover{border-color:var(--hist-hover-line);background:var(--hist-hover)}
+.h-exp{font-family:ui-monospace,Menlo,monospace;font-size:13px;color:var(--mut);word-break:break-all}
+.h-res{font-family:ui-monospace,Menlo,monospace;font-size:16px;color:var(--accent);word-break:break-all;margin-top:2px}
+.empty-note{color:var(--mut);font-size:13px;text-align:center;padding:14px 4px}
+details.legend{font-size:13.5px;color:var(--mut);line-height:1.55}
+details.legend summary{cursor:pointer;color:var(--ink);font-weight:600}
+details.legend p{margin:8px 0 2px}
+details.legend h3{font-size:12.5px;margin:12px 0 2px;color:var(--legend-h);letter-spacing:.4px;text-transform:uppercase}
+details.legend ul{margin:6px 0;padding-left:18px}
+details.legend li{margin:3px 0}
+details.legend .num{font-family:ui-monospace,Menlo,Consolas,monospace;background:var(--key);border:1px solid var(--line);border-radius:5px;padding:0 4px}
+
+/* help overlay */
+.overlay{position:fixed;inset:0;background:var(--overlay);backdrop-filter:blur(4px);display:flex;align-items:flex-start;justify-content:center;padding:6vh 16px;z-index:50}
+.overlay[hidden]{display:none}
+.help-card{background:var(--panel);border:1px solid var(--line);border-radius:16px;max-width:660px;width:100%;padding:22px 26px;max-height:84vh;overflow:auto;box-shadow:0 24px 80px var(--shadow-xl)}
+.help-card h2{margin:0 0 8px}
+.help-card table{width:100%;border-collapse:collapse;font-size:13.5px;margin:10px 0}
+.help-card td{padding:7px 8px;border-top:1px solid var(--line);vertical-align:top}
+.help-card td:first-child{font-family:ui-monospace,Menlo,monospace;color:var(--clay);white-space:nowrap}
+.help-card p{color:var(--mut);font-size:13.5px}
+kbd{background:var(--key);border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:1px 6px;font-size:12px}
+
+@media(max-width:1020px){.app{grid-template-columns:1fr}}
+@media(max-width:880px){
+  .controls{flex-direction:column}
+  .display{min-height:150px;padding:12px 14px}
+  .rail{width:100%;display:grid;grid-template-columns:1fr 1fr;grid-auto-rows:min-content;align-items:start}
+  .toggles{grid-column:1/-1;grid-template-columns:repeat(4,1fr)}
+  .eq{grid-column:1/-1}
+  .digits{gap:4px}
+  .dkey{min-height:46px;border-radius:8px}
+  .dkey svg{height:23px}
+  .dkey .gtext{font-size:17px;letter-spacing:0}
+  .cunei .gtext{font-size:26px}
+  .opglyph{font-size:18px;line-height:36px}
+  .klabel{font-size:8.5px;margin-top:2px}
+  .gbox svg{height:34px}
+}
+</style>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='2' y='2' width='60' height='60' rx='14' fill='%231a202c' stroke='%233a4356' stroke-width='2'/%3E%3Cpath d='M40 11 l9 -4.5 -2.2 10 z' fill='%238a6c33' opacity='.55'/%3E%3Cpath d='M32 8 C27.5 16 23.5 23.5 22.5 31.5 C21.5 41 26.5 49.5 31 54.5 L33 54.5 C37.5 49.5 42.5 41 41.5 31.5 C40.5 23.5 36.5 16 32 8 Z' fill='%23d8a355'/%3E%3Cpath d='M44 37 l9.5 4 -7.5 7 z' fill='%23d8a355' opacity='.9'/%3E%3Cpath d='M47.5 49 l8.5 2.5 -4.5 8' fill='none' stroke='%23d8a355' stroke-width='3.5' stroke-linecap='round' opacity='.65'/%3E%3C/svg%3E">
+</head>
+<body>
+<main class="app">
+  <section class="calc">
+    <header class="brand">
+      <span class="brand-mark" id="brandMark"></span>
+      Babylonian Calculator
+      <span class="tabs">
+        <button id="tabCalc" class="viewtab on">Calculator</button>
+        <button id="tabConvert" class="viewtab">Convert</button>
+      </span>
+      <button id="themeBtn" class="ghost" title="Toggle light / dark">&#9789;</button>
+      <button id="helpBtn" class="ghost" title="How to use">? help</button>
+    </header>
+
+    <div id="calcView">
+    <div class="display">
+      <div id="cuneiEcho" class="cunei" aria-label="current number in cuneiform"></div>
+      <div id="expr" class="expr empty"></div>
+      <div class="result-row">
+        <div id="result" class="result"></div>
+        <button id="copyBtn" class="copy-btn" title="Copy result" aria-label="Copy result">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="9" y="9" width="12" height="12" rx="2"/>
+            <path d="M5 15V5a2 2 0 0 1 2-2h10"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+    </div>
+
+    <div id="convertView" hidden>
+      <div class="conv-cats" id="convCats" aria-label="unit category"></div>
+      <div class="conv-grid">
+        <div class="conv-amt-disp" title="tap the digit pad below — each tap is one base-60 place">
+          <span id="convAmtDisp">0</span>
+          <span id="convAmtDec"></span>
+          <span class="conv-entry-keys">
+            <button id="convRadix" class="ghost-key" title="radix point — start fractions (2;30 = 2.5)">;</button>
+            <button id="convDel" class="ghost-key" title="delete">&#9003;</button>
+            <button id="convClr" class="ghost-key" title="clear">C</button>
+          </span>
+        </div>
+        <select id="convFrom" class="conv-sel" aria-label="from unit"></select>
+        <button id="convSwap" class="conv-swap" title="Swap units">&#8646;</button>
+        <select id="convTo" class="conv-sel" aria-label="to unit"></select>
+      </div>
+      <div class="conv-result">
+        <button id="convRateNote" class="conv-note" hidden title="Refresh exchange rates"></button>
+        <div class="result-row">
+          <div id="convOut" class="conv-out"></div>
+          <button id="convCopy" class="copy-btn" title="Copy result" aria-label="Copy result">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="9" y="9" width="12" height="12" rx="2"/>
+              <path d="M5 15V5a2 2 0 0 1 2-2h10"/>
+            </svg>
+          </button>
+        </div>
+        <div id="convCunei" class="cunei conv-cunei" aria-label="result in cuneiform"></div>
+      </div>
+    </div>
+
+    <div id="padZone" class="controls">
+      <div id="digitPad" class="digits" aria-label="sexagesimal digit keys"></div>
+      <aside class="rail">
+        <div class="toggles">
+          <button id="angleBtn" class="tgl on">DEG</button>
+          <button id="styleBtn" class="tgl" title="Cycle result notation">94</button>
+        </div>
+        <div id="sciPad" class="sci" aria-label="scientific keys"></div>
+        <div id="opPad" class="ops" aria-label="operator keys"></div>
+        <button id="eqBtn" class="eq">=</button>
+      </aside>
+    </div>
+  </section>
+
+  <section class="side">
+    <div class="card">
+      <h2>History <button id="clearHist" class="ghost">clear</button></h2>
+      <ol id="history"></ol>
+      <div id="histEmpty" class="empty-note">No calculations yet.<br>Tap a digit to begin.</div>
+    </div>
+    <div class="card">
+      <details class="legend">
+        <summary>About these numerals</summary>
+        <p>~4000 years ago Babylonians wrote all numbers in base&nbsp;60 — the system
+        behind our 60-minute hour and 360-degree circle. A vertical wedge is&nbsp;1,
+        a corner wedge (𒌋) is&nbsp;10; ones stack in rows of three after the tens.
+        They had no zero, so an empty place is marked with a pair of slanted wedges.
+        The calculator uses the authentic Unicode cuneiform number signs when your
+        device has a cuneiform font, and draws them otherwise.</p>
+
+        <h3>How it works</h3>
+        <ul>
+          <li><b>Positional, like ours.</b> Each place is worth 60× the one to its right,
+            exactly as decimal places are worth 10×. The digits themselves run from
+            <span class="num">1</span> to <span class="num">59</span>.</li>
+          <li><b>Two signs build every digit.</b> A vertical wedge = 1, the corner wedge
+            𒌋 = 10. So <b>𒌋𒌋𒐂</b> reads 20 + 4 = <span class="num">24</span>; unit
+            wedges never exceed three per row — <span class="num">9</span> (𒐇) stacks
+            in three rows.</li>
+          <li><b>Places are read left to right</b>, most significant first:
+            <span class="num">1,25</span> means 1×60 + 25 = <span class="num">85</span>.
+            Tap the digit pad here the same way: tap <span class="num">1</span> then
+            <span class="num">25</span> and you'll see <span class="num">1,25</span>.</li>
+          <li><b>Fractions worked the same way.</b> Places right of the radix point count
+            sixtieths: <span class="num">0;30</span> = 30/60 = one half. Babylonian
+            scribes did division by multiplying by reciprocals — handy with so many
+            exact fractions available.</li>
+        </ul>
+
+        <h3>Why base 60?</h3>
+        <p>Sixty is divisible by 1, 2, 3, 4, 5, 6, 10, 12, 15, 20 and 30 — more than any
+        smaller number. Halves, thirds, quarters and fifths all come out exact, which made
+        trade, land measurement and astronomy painless. The Sumerians started counting in
+        sixties around 3000&nbsp;BCE; Old Babylonian scribes (~1900–1600&nbsp;BCE) turned it
+        into the fully positional system this calculator mimics. "Cuneiform" just means
+        <i>wedge-shaped</i> — scribes pressed reed styluses into wet clay tablets that
+        then dried nearly indestructible, which is why millions of their homework sheets
+        still survive.</p>
+
+        <h3>The missing zero</h3>
+        <p>For centuries an empty place was simply left blank, so "1,1" (3600+1) could be
+        misread as "11". Later scribes began filling gaps with two slanted wedges — the
+        world's earliest <i>placeholder</i> zero. It was never treated as a number you can
+        calculate with; that idea had to wait for Indian mathematicians over two thousand
+        years later. The dashed key on the pad plays the same role.</p>
+
+        <h3>The legacy on your clock</h3>
+        <p>When Greek astronomers adopted Babylonian data, they kept the sixtieths:
+        a degree split into 60 <i>partes minutae primae</i> ("first small parts") and again
+        into <i>secundae</i>. That's literally where <b>minutes</b> and <b>seconds</b>
+        come from — on maps and on your watch face. This app's °′″ and h&nbsp;m&nbsp;s
+        result modes write numbers exactly the way those astronomers would have.</p>
+      </details>
+    </div>
+  </section>
+</main>
+
+<div id="helpOverlay" class="overlay" hidden>
+  <div class="help-card">
+    <h2>How to use</h2>
+    <table>
+      <tr><td>1;30,25</td><td>a base-60 number: 1 + 30&frasl;60 + 25&frasl;3600.
+        <b>;</b> is the radix point (like a decimal point), <b>,</b> separates places</td></tr>
+      <tr><td>12°34'56"</td><td>degrees / hours with minutes and seconds
+        (also <b>d m s</b> or <b>h m s</b>: 3h25m10s)</td></tr>
+      <tr><td>1.5</td><td>plain decimal numbers work too</td></tr>
+      <tr><td>+ − × ÷ ^ √</td><td>plus, minus, times, divided by, power of, square root</td></tr>
+      <tr><td>sin cos tan …</td><td>trig &amp; logs; toggle <b>DEG/RAD</b> for angle units</td></tr>
+      <tr><td>x! π e Ans</td><td>factorial, constants, and your last result</td></tr>
+      <tr><td>digit keys</td><td>each key enters one whole place value (1–59).
+        Tap digits one after another: first tap = sixties place, next = units, then fractions.
+        The dashed key marks an empty place (the Babylonian "zero")</td></tr>
+      <tr><td>keyboard</td><td>type freely:
+        <kbd>0-9</kbd> <kbd>; ,</kbd> <kbd>+ - * / ^ ! ( )</kbd>,
+        <kbd>Enter</kbd> equals, <kbd>Backspace</kbd>, <kbd>Esc</kbd> clear</td></tr>
+      <tr><td>= result</td><td>shown in normal digits (94) — tap the notation button to switch
+        <b>94</b> → <b>1;34,25</b> → <b>°′″</b> → <b>h m s</b>; the Babylonian
+        numerals stay above either way</td></tr>
+      <tr><td>Extra keys</td><td><b>%</b> percent (50% = 0.5, so 200+10% = 200.1) ·
+        <b>mod</b> remainder (7 mod 3 = 1) · <b>nCr / nPr</b> combinations &amp;
+        permutations (5 nCr 2 = 10, 5 nPr 2 = 20) · <b>1/x</b> reciprocal ·
+        <b>x² x³</b> squares &amp; cubes (wrap the whole expression: 3+4 then x² = 49) ·
+        <b>abs</b> absolute value</td></tr>
+      <tr><td>Convert tab</td><td>unit converter: Length, Weight, Volume (metric kitchen:
+        1 cup = 250 ml, tbsp = 15 ml, tsp = 5 ml), Temperature (°C/°F/K), Time,
+        Speed, Area, Data storage (KB/KiB families), Energy (kcal/kJ/kWh),
+        Currency, Crypto (BTC, ETH, SOL &amp; more) and Stocks (AAPL, MSFT, NVDA
+        &amp; more → USD/EUR/…).
+        Exchange rates and prices are fetched once and cached for ~6 hours —
+        offline, the last known values keep working.
+        Enter amounts with the digit pad below using base-60 places — tap <b>5</b> then
+        <b>1</b> = <b>5,1</b> = 301; the <b>;</b> key starts fractions (2;30 = 2.5).
+        Results show in normal <i>and</i> Babylonian numerals; ⇄ swaps the units</td></tr>
+    </table>
+    <p>Note: results are rounded to hide tiny floating-point noise, so 1÷3×3 shows exactly 1.
+    Fractions whose base-60 expansion never ends are shown to 8 places.</p>
+    <p style="text-align:right"><button id="helpClose" class="ghost">close</button></p>
+  </div>
+</div>
+
+<script>
+//__ENGINE__
+</script>
+<script>
+//__UI__
+</script>
+</body>
+</html>
